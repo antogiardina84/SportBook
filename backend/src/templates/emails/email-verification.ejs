@@ -1,0 +1,82 @@
+<!-- ============================================ -->
+<!-- backend/src/templates/emails/email-verification.ejs -->
+<!-- Template per verifica email -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifica Email</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; }
+        .icon { font-size: 48px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .message { font-size: 16px; color: #555; line-height: 1.8; margin-bottom: 30px; }
+        .button-container { text-align: center; margin: 30px 0; }
+        .button { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; }
+        .benefits { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 30px 0; }
+        .benefit-item { padding: 10px 0; display: flex; align-items: center; }
+        .benefit-icon { font-size: 20px; margin-right: 15px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">✉️</div>
+            <h1>Verifica la tua Email</h1>
+        </div>
+        
+        <div class="content">
+            <p style="margin-bottom: 20px;">Ciao <%= firstName %>,</p>
+            
+            <div class="title">Benvenuto su <%= organizationName %>! 🎉</div>
+            
+            <div class="message">
+                <p>Grazie per esserti registrato. Per completare la registrazione e accedere a tutte le funzionalità, verifica il tuo indirizzo email cliccando sul pulsante qui sotto:</p>
+            </div>
+            
+            <div class="button-container">
+                <a href="<%= verificationUrl %>" class="button">Verifica Email</a>
+            </div>
+            
+            <div class="benefits">
+                <p style="font-weight: 600; margin-bottom: 15px;">Con l'account verificato potrai:</p>
+                <div class="benefit-item">
+                    <span class="benefit-icon">📅</span>
+                    <span>Prenotare campi online 24/7</span>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">💳</span>
+                    <span>Pagare in modo sicuro</span>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">📊</span>
+                    <span>Visualizzare lo storico prenotazioni</span>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">🔔</span>
+                    <span>Ricevere notifiche importanti</span>
+                </div>
+            </div>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 30px;">
+                Se il pulsante non funziona, copia e incolla questo link nel browser:<br>
+                <span style="color: #667eea; word-break: break-all;"><%= verificationUrl %></span>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><%= organizationName %></p>
+            <p style="font-size: 12px; color: #999; margin-top: 10px;">
+                Se non hai creato questo account, ignora questa email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

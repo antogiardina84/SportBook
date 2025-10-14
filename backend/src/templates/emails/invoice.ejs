@@ -1,0 +1,130 @@
+<!-- ============================================ -->
+<!-- backend/src/templates/emails/invoice.ejs -->
+<!-- Template per fattura/ricevuta -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fattura</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 700px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background-color: #1a1a1a; color: white; padding: 30px; }
+        .invoice-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .invoice-number { font-size: 16px; opacity: 0.8; }
+        .content { padding: 40px; }
+        .company-info { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+        .info-section h4 { margin-top: 0; margin-bottom: 10px; color: #1a1a1a; }
+        .info-section p { margin: 5px 0; font-size: 14px; color: #666; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        .invoice-table th { background-color: #f9fafb; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
+        .invoice-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .invoice-table tr:last-child td { border-bottom: none; }
+        .totals { margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; padding: 10px 0; }
+        .total-row.grand { background-color: #1a1a1a; color: white; padding: 15px; margin-top: 10px; font-size: 18px; font-weight: bold; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="invoice-title">FATTURA</div>
+            <div class="invoice-number">N. <%= invoiceNumber %></div>
+        </div>
+        
+        <div class="content">
+            <div class="company-info">
+                <div class="info-section">
+                    <h4>Da:</h4>
+                    <p><strong><%= organizationName %></strong></p>
+                    <p><%= address.street %></p>
+                    <p><%= address.city %>, <%= address.postalCode %></p>
+                    <p>P.IVA: <%= vatNumber %></p>
+                    <p>Email: <%= email %></p>
+                </div>
+                
+                <div class="info-section" style="text-align: right;">
+                    <h4>A:</h4>
+                    <p><strong><%= customerName %></strong></p>
+                    <p><%= customerEmail %></p>
+                    <% if (customerAddress) { %>
+                    <p><%= customerAddress %></p>
+                    <% } %>
+                    <% if (customerVAT) { %>
+                    <p>P.IVA: <%= customerVAT %></p>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <p><strong>Data emissione:</strong> <%= issueDate %></p>
+                <p><strong>Data scadenza:</strong> <%= dueDate %></p>
+                <% if (paymentMethod) { %>
+                <p><strong>Metodo di pagamento:</strong> <%= paymentMethod %></p>
+                <% } %>
+            </div>
+            
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Descrizione</th>
+                        <th style="text-align: center;">Qta</th>
+                        <th style="text-align: right;">Prezzo</th>
+                        <th style="text-align: right;">Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% items.forEach(item => { %>
+                    <tr>
+                        <td>
+                            <strong><%= item.description %></strong><br>
+                            <span style="font-size: 13px; color: #666;"><%= item.details %></span>
+                        </td>
+                        <td style="text-align: center;"><%= item.quantity %></td>
+                        <td style="text-align: right;">€ <%= item.price.toFixed(2) %></td>
+                        <td style="text-align: right;"><strong>€ <%= (item.quantity * item.price).toFixed(2) %></strong></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            
+            <div class="totals">
+                <div class="total-row">
+                    <span>Subtotale:</span>
+                    <span>€ <%= subtotal.toFixed(2) %></span>
+                </div>
+                <% if (discount > 0) { %>
+                <div class="total-row" style="color: #10b981;">
+                    <span>Sconto:</span>
+                    <span>- € <%= discount.toFixed(2) %></span>
+                </div>
+                <% } %>
+                <div class="total-row">
+                    <span>IVA (<%= taxRate %>%):</span>
+                    <span>€ <%= tax.toFixed(2) %></span>
+                </div>
+                <div class="total-row grand">
+                    <span>TOTALE:</span>
+                    <span>€ <%= total.toFixed(2) %></span>
+                </div>
+            </div>
+            
+            <% if (notes) { %>
+            <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-left: 4px solid #667eea; border-radius: 4px;">
+                <h4 style="margin-top: 0;">Note:</h4>
+                <p style="margin: 0; font-size: 14px;"><%= notes %></p>
+            </div>
+            <% } %>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= organizationName %></strong></p>
+            <p style="margin-top: 10px;">Grazie per aver scelto i nostri servizi!</p>
+        </div>
+    </div>
+</body>
+</html>

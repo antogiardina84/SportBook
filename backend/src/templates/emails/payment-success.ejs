@@ -1,0 +1,86 @@
+<!-- ============================================ -->
+<!-- backend/src/templates/emails/booking-reminder.ejs -->
+<!-- Template per promemoria prenotazione -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promemoria Prenotazione</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 40px 20px; text-align: center; }
+        .icon { font-size: 48px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .title { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .countdown { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 8px; text-align: center; margin: 25px 0; border-left: 4px solid #f59e0b; }
+        .countdown-number { font-size: 48px; font-weight: bold; color: #92400e; }
+        .countdown-label { font-size: 16px; color: #92400e; margin-top: 10px; }
+        .booking-card { background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0284c7; }
+        .detail-row { padding: 10px 0; display: flex; justify-content: space-between; }
+        .button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">⏰</div>
+            <h1>Promemoria Prenotazione</h1>
+        </div>
+        
+        <div class="content">
+            <p style="margin-bottom: 20px;">Ciao <%= firstName %>,</p>
+            
+            <div class="title">La tua prenotazione è vicina!</div>
+            
+            <div class="countdown">
+                <div class="countdown-number"><%= hoursUntil %></div>
+                <div class="countdown-label">ore alla tua prenotazione</div>
+            </div>
+            
+            <div class="booking-card">
+                <h3 style="margin-top: 0; color: #0c4a6e;">📍 Dettagli Prenotazione</h3>
+                
+                <div class="detail-row">
+                    <span style="color: #0369a1;">Campo:</span>
+                    <strong style="color: #0c4a6e;"><%= fieldName %></strong>
+                </div>
+                <div class="detail-row">
+                    <span style="color: #0369a1;">📅 Data:</span>
+                    <strong style="color: #0c4a6e;"><%= bookingDate %></strong>
+                </div>
+                <div class="detail-row">
+                    <span style="color: #0369a1;">🕐 Orario:</span>
+                    <strong style="color: #0c4a6e;"><%= startTime %> - <%= endTime %></strong>
+                </div>
+                <div class="detail-row">
+                    <span style="color: #0369a1;">📍 Indirizzo:</span>
+                    <strong style="color: #0c4a6e;"><%= address %></strong>
+                </div>
+            </div>
+            
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    💡 <strong>Suggerimenti:</strong><br>
+                    • Arriva 10 minuti prima<br>
+                    • Porta con te un documento di identità<br>
+                    • Ricorda di idratarti adeguatamente
+                </p>
+            </div>
+            
+            <p style="text-align: center; margin-top: 30px;">
+                <a href="<%= viewBookingUrl %>" class="button">Visualizza Dettagli</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= organizationName %></strong></p>
+            <p style="margin-top: 10px;">Ci vediamo presto! 🎾</p>
+        </div>
+    </div>
+</body>
+</html>

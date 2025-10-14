@@ -1,0 +1,133 @@
+<!-- ============================================ -->
+<!-- backend/src/templates/emails/welcome.ejs -->
+<!-- Template email di benvenuto -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto su SportBook</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px 20px; text-align: center; }
+        .icon { font-size: 72px; margin-bottom: 15px; }
+        .content { padding: 40px 30px; }
+        .title { font-size: 26px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .welcome-message { font-size: 16px; color: #555; line-height: 1.8; text-align: center; margin-bottom: 30px; }
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0; }
+        .feature-card { background-color: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; }
+        .feature-icon { font-size: 32px; margin-bottom: 10px; }
+        .feature-title { font-weight: 600; color: #1a1a1a; margin-bottom: 5px; }
+        .feature-desc { font-size: 13px; color: #666; }
+        .button { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; }
+        .steps { background-color: #f0f9ff; padding: 25px; border-radius: 8px; margin: 30px 0; }
+        .step { padding: 15px 0; display: flex; align-items: start; }
+        .step-number { background-color: #667eea; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; font-weight: bold; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+        @media only screen and (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🎾</div>
+            <h1 style="margin: 0; font-size: 32px;">Benvenuto su <%= organizationName %>!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="title">Ciao <%= firstName %>, siamo felici di averti con noi! 🎉</div>
+            
+            <div class="welcome-message">
+                <p>Grazie per esserti registrato. Sei pronto a vivere un'esperienza di prenotazione semplice e veloce?</p>
+                <p>Con il tuo account potrai gestire tutto in modo facile e intuitivo.</p>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <div class="feature-title">Prenota Online</div>
+                    <div class="feature-desc">Prenota campi 24/7 con pochi click</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💳</div>
+                    <div class="feature-title">Paga Sicuro</div>
+                    <div class="feature-desc">Pagamenti protetti e veloci</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Storico Completo</div>
+                    <div class="feature-desc">Tutte le tue prenotazioni in un posto</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-title">Notifiche Smart</div>
+                    <div class="feature-desc">Promemoria automatici</div>
+                </div>
+            </div>
+            
+            <div class="steps">
+                <h3 style="margin-top: 0; color: #0c4a6e; text-align: center;">🚀 Inizia Subito:</h3>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong style="color: #0c4a6e;">Verifica la tua email</strong><br>
+                        <span style="color: #0369a1; font-size: 14px;">Clicca sul link che ti abbiamo inviato</span>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong style="color: #0c4a6e;">Esplora i campi disponibili</strong><br>
+                        <span style="color: #0369a1; font-size: 14px;">Scegli il campo perfetto per te</span>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong style="color: #0c4a6e;">Fai la tua prima prenotazione</strong><br>
+                        <span style="color: #0369a1; font-size: 14px;">È facile e veloce!</span>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="<%= dashboardUrl %>" class="button">Vai al Tuo Account</a>
+            </p>
+            
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 30px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    💡 <strong>Consiglio:</strong> Completa il tuo profilo per ricevere offerte personalizzate e accedere a funzionalità esclusive!
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <p style="font-size: 16px; color: #666; margin-bottom: 15px;">Hai bisogno di aiuto?</p>
+                <p style="font-size: 14px;">
+                    📧 <a href="mailto:<%= email %>" style="color: #667eea;"><%= email %></a><br>
+                    📞 <%= phone %><br>
+                    💬 <a href="<%= supportUrl || '#' %>" style="color: #667eea;">Chat con il supporto</a>
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= organizationName %></strong></p>
+            <p style="margin: 10px 0;"><%= address %></p>
+            <p style="font-size: 12px; color: #999; margin-top: 15px;">
+                Seguici sui social per restare aggiornato su eventi e promozioni!
+            </p>
+        </div>
+    </div>
+</body>
+</html>

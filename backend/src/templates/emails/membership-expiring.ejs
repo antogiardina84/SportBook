@@ -1,0 +1,67 @@
+<!-- ============================================ -->
+<!-- backend/src/templates/emails/membership-expiring.ejs -->
+<!-- Template per abbonamento in scadenza -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abbonamento in Scadenza</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 40px 20px; text-align: center; }
+        .icon { font-size: 48px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .title { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .countdown { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; text-align: center; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b; }
+        .countdown-number { font-size: 48px; font-weight: bold; color: #92400e; }
+        .button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">⏰</div>
+            <h1>Abbonamento in Scadenza</h1>
+        </div>
+        
+        <div class="content">
+            <p style="margin-bottom: 20px;">Ciao <%= firstName %>,</p>
+            
+            <div class="title">Il tuo abbonamento sta per scadere</div>
+            
+            <div class="countdown">
+                <div class="countdown-number"><%= daysLeft %></div>
+                <div style="font-size: 16px; color: #92400e; margin-top: 10px;">giorni rimanenti</div>
+            </div>
+            
+            <p style="font-size: 16px; color: #555; text-align: center; margin: 25px 0;">
+                Il tuo abbonamento <strong><%= membershipName %></strong> scadrà il <strong><%= expiresAt %></strong>
+            </p>
+            
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 6px; margin: 25px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 15px;">
+                    ⚠️ Dopo la scadenza perderai l'accesso a tutti i vantaggi esclusivi dell'abbonamento, inclusi gli sconti sulle prenotazioni.
+                </p>
+            </div>
+            
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="<%= renewUrl %>" class="button">Rinnova Ora</a>
+            </p>
+            
+            <p style="text-align: center; font-size: 14px; color: #666; margin-top: 20px;">
+                Hai domande? <a href="mailto:<%= email %>" style="color: #667eea;">Contattaci</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= organizationName %></strong></p>
+            <p style="margin-top: 10px;">Non lasciare scadere i tuoi vantaggi!</p>
+        </div>
+    </div>
+</body>
+</html>

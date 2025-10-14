@@ -1,0 +1,127 @@
+<!-- backend/src/templates/emails/booking-confirmation.ejs -->
+<!-- Template per conferma prenotazione -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conferma Prenotazione</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px 20px; text-align: center; }
+        .success-icon { font-size: 64px; margin-bottom: 15px; }
+        .content { padding: 40px 30px; }
+        .title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .booking-card { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0284c7; padding: 25px; border-radius: 8px; margin: 25px 0; }
+        .booking-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #bae6fd; }
+        .booking-row:last-child { border-bottom: none; }
+        .label { font-weight: 500; color: #0369a1; }
+        .value { font-weight: 600; color: #0c4a6e; }
+        .total-box { background-color: #10b981; color: white; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center; }
+        .total-label { font-size: 14px; opacity: 0.9; }
+        .total-value { font-size: 32px; font-weight: bold; margin: 5px 0; }
+        .button-container { text-align: center; margin: 30px 0; }
+        .button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px; }
+        .info-box { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✅</div>
+            <h1>Prenotazione Confermata!</h1>
+        </div>
+        
+        <div class="content">
+            <p style="margin-bottom: 20px;">Ciao <%= firstName %>,</p>
+            
+            <div class="title">La tua prenotazione è stata confermata</div>
+            
+            <p style="text-align: center; font-size: 16px; color: #555; margin-bottom: 30px;">
+                Codice prenotazione: <strong style="color: #667eea;">#<%= bookingId.substring(0, 8).toUpperCase() %></strong>
+            </p>
+            
+            <div class="booking-card">
+                <h3 style="margin-top: 0; color: #0c4a6e;">📍 Dettagli Prenotazione</h3>
+                
+                <div class="booking-row">
+                    <span class="label">Campo:</span>
+                    <span class="value"><%= fieldName %></span>
+                </div>
+                
+                <div class="booking-row">
+                    <span class="label">Tipo:</span>
+                    <span class="value"><%= fieldType %></span>
+                </div>
+                
+                <div class="booking-row">
+                    <span class="label">📅 Data:</span>
+                    <span class="value"><%= bookingDate %></span>
+                </div>
+                
+                <div class="booking-row">
+                    <span class="label">🕐 Orario:</span>
+                    <span class="value"><%= startTime %> - <%= endTime %></span>
+                </div>
+                
+                <div class="booking-row">
+                    <span class="label">⏱️ Durata:</span>
+                    <span class="value"><%= duration %> minuti</span>
+                </div>
+                
+                <% if (participants && participants.length > 0) { %>
+                <div class="booking-row">
+                    <span class="label">👥 Partecipanti:</span>
+                    <span class="value"><%= participants.length %></span>
+                </div>
+                <% } %>
+            </div>
+            
+            <div class="total-box">
+                <div class="total-label">Importo Totale</div>
+                <div class="total-value">€ <%= totalAmount.toFixed(2) %></div>
+                <% if (paymentStatus === 'COMPLETED') { %>
+                <div style="font-size: 14px; margin-top: 10px;">✓ Pagamento completato</div>
+                <% } else { %>
+                <div style="font-size: 14px; margin-top: 10px;">⚠️ Pagamento in sospeso</div>
+                <% } %>
+            </div>
+            
+            <div class="info-box">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    <strong>📋 Importante:</strong> Presentati 10 minuti prima dell'orario prenotato.
+                    <% if (cancellationHours) { %>
+                    La cancellazione gratuita è disponibile fino a <%= cancellationHours %> ore prima.
+                    <% } %>
+                </p>
+            </div>
+            
+            <div class="button-container">
+                <a href="<%= viewBookingUrl %>" class="button">Visualizza Prenotazione</a>
+                <% if (addToCalendarUrl) { %>
+                <a href="<%= addToCalendarUrl %>" class="button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">📅 Aggiungi a Calendario</a>
+                <% } %>
+            </div>
+            
+            <% if (specialRequests) { %>
+            <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 6px;">
+                <p style="font-weight: 600; margin-bottom: 10px;">Note:</p>
+                <p style="margin: 0; color: #555;"><%= specialRequests %></p>
+            </div>
+            <% } %>
+        </div>
+        
+        <div class="footer">
+            <p><strong><%= organizationName %></strong></p>
+            <p style="margin: 10px 0;"><%= address %></p>
+            <p>📧 <%= email %> | 📞 <%= phone %></p>
+            <p style="font-size: 12px; color: #999; margin-top: 15px;">
+                Per modifiche o cancellazioni, accedi al tuo account o contattaci.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

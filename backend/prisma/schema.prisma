@@ -1,0 +1,409 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  INSTRUCTOR
+  MEMBER
+  GUEST
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum FieldType {
+  TENNIS
+  PADEL
+  SQUASH
+  MULTIPURPOSE
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  logoUrl     String?  @map("logo_url") @db.VarChar(500)
+  website     String?  @db.VarChar(255)
+  phone       String?  @db.VarChar(20)
+  email       String?  @db.VarChar(255)
+  address     Json?
+
+  settings      Json @default("{}")
+  paymentConfig Json @default("{}") @map("payment_config")
+  emailConfig   Json @default("{}") @map("email_config")
+  smsConfig     Json @default("{}") @map("sms_config")
+
+  subscriptionPlan   String             @default("basic") @map("subscription_plan") @db.VarChar(50)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE) @map("subscription_status")
+  trialEndsAt        DateTime?          @map("trial_ends_at") @db.Timestamptz(6)
+  subscriptionEndsAt DateTime?          @map("subscription_ends_at") @db.Timestamptz(6)
+
+  businessHours Json   @default("{}") @map("business_hours")
+  timezone      String @default("Europe/Rome") @db.VarChar(50)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy String?   @map("created_by")
+
+  users         User[]
+  fields        Field[]
+  bookings      Booking[]
+  memberships   Membership[]
+  payments      Payment[]
+  notifications Notification[]
+  documents     Document[]
+  auditLogs     AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  email          String  @db.VarChar(255)
+  passwordHash   String? @map("password_hash") @db.VarChar(255)
+  phone          String? @db.VarChar(20)
+
+  firstName   String    @map("first_name") @db.VarChar(100)
+  lastName    String    @map("last_name") @db.VarChar(100)
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  gender      String?   @db.VarChar(10)
+  avatarUrl   String?   @map("avatar_url") @db.VarChar(500)
+
+  role        UserRole @default(MEMBER)
+  permissions Json     @default("[]")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  lastLoginAt         DateTime? @map("last_login_at") @db.Timestamptz(6)
+  loginCount          Int       @default(0) @map("login_count")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until") @db.Timestamptz(6)
+
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+
+  passwordResetToken   String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpires DateTime? @map("password_reset_expires") @db.Timestamptz(6)
+
+  emergencyContact Json?   @map("emergency_contact")
+  medicalNotes     String? @map("medical_notes") @db.Text
+  preferences      Json    @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+  memberships       Membership[]
+  payments          Payment[]
+  notifications     Notification[]
+  documents         Document[]
+  auditLogs         AuditLog[]
+  cancelledBookings Booking[]      @relation("CancelledBy")
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Field {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  name           String    @db.VarChar(100)
+  description    String?   @db.Text
+  fieldType      FieldType @map("field_type")
+
+  hourlyRate            Decimal @default(0) @map("hourly_rate") @db.Decimal(10, 2)
+  peakHourRate          Decimal? @map("peak_hour_rate") @db.Decimal(10, 2)
+  memberDiscountPercent Int     @default(0) @map("member_discount_percent")
+
+  isActive       Boolean @default(true) @map("is_active")
+  availableFrom  String  @default("08:00") @map("available_from") @db.VarChar(5)
+  availableUntil String  @default("22:00") @map("available_until") @db.VarChar(5)
+
+  surfaceType String  @default("") @map("surface_type") @db.VarChar(50)
+  indoor      Boolean @default(false)
+  lighting    Boolean @default(false)
+
+  minBookingDuration Int @default(60) @map("min_booking_duration")
+  maxBookingDuration Int @default(120) @map("max_booking_duration")
+  advanceBookingDays Int @default(30) @map("advance_booking_days")
+  cancellationHours  Int @default(24) @map("cancellation_hours")
+
+  equipmentIncluded Json @default("[]") @map("equipment_included")
+  amenities         Json @default("[]")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+
+  @@index([organizationId])
+  @@index([fieldType])
+  @@index([isActive])
+  @@map("fields")
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  organizationId String        @map("organization_id")
+  fieldId        String        @map("field_id")
+  userId         String        @map("user_id")
+  startTime      DateTime      @map("start_time") @db.Timestamptz(6)
+  endTime        DateTime      @map("end_time") @db.Timestamptz(6)
+  status         BookingStatus @default(PENDING)
+
+  basePrice      Decimal @map("base_price") @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  taxAmount      Decimal @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  totalAmount    Decimal @map("total_amount") @db.Decimal(10, 2)
+
+  participants    Json @default("[]")
+  maxParticipants Int  @default(4) @map("max_participants")
+
+  notes           String? @db.Text
+  specialRequests String? @map("special_requests") @db.Text
+
+  paymentRequired Boolean       @default(true) @map("payment_required")
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+  paymentIntentId String?       @map("payment_intent_id") @db.VarChar(255)
+
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy        String?   @map("cancelled_by")
+  cancellationReason String?   @map("cancellation_reason") @db.Text
+  refundAmount       Decimal?  @map("refund_amount") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  field           Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cancelledByUser User?          @relation("CancelledBy", fields: [cancelledBy], references: [id])
+  payments        Payment[]
+  notifications   Notification[]
+  documents       Document[]
+
+  @@index([organizationId])
+  @@index([fieldId])
+  @@index([userId])
+  @@index([status])
+  @@index([startTime, endTime])
+  @@map("bookings")
+}
+
+model Membership {
+  id             String             @id @default(uuid())
+  organizationId String             @map("organization_id")
+  userId         String             @map("user_id")
+  name           String             @db.VarChar(100)
+  description    String?            @db.Text
+  membershipType String             @map("membership_type") @db.VarChar(50)
+
+  price    Decimal @db.Decimal(10, 2)
+  currency String  @default("EUR") @db.VarChar(3)
+
+  startsAt  DateTime  @map("starts_at") @db.Timestamptz(6)
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  autoRenew Boolean   @default(false) @map("auto_renew")
+
+  bookingCredits  Int     @default(0) @map("booking_credits")
+  discountPercent Int     @default(0) @map("discount_percent")
+  priorityBooking Boolean @default(false) @map("priority_booking")
+
+  status             SubscriptionStatus @default(ACTIVE)
+  cancelledAt        DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  cancellationReason String?            @map("cancellation_reason") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments      Payment[]
+  notifications Notification[]
+  documents     Document[]
+
+  @@unique([organizationId, userId, startsAt])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Payment {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  userId         String  @map("user_id")
+  bookingId      String? @map("booking_id")
+  membershipId   String? @map("membership_id")
+
+  amount        Decimal @db.Decimal(10, 2)
+  currency      String  @default("EUR") @db.VarChar(3)
+  paymentMethod String? @map("payment_method") @db.VarChar(50)
+
+  stripePaymentIntentId String? @map("stripe_payment_intent_id") @db.VarChar(255)
+  stripeChargeId        String? @map("stripe_charge_id") @db.VarChar(255)
+
+  status      PaymentStatus @default(PENDING)
+  processedAt DateTime?     @map("processed_at") @db.Timestamptz(6)
+
+  description String? @db.Text
+  metadata    Json    @default("{}")
+
+  failureReason  String?   @map("failure_reason") @db.Text
+  refundedAmount Decimal   @default(0) @map("refunded_amount") @db.Decimal(10, 2)
+  refundedAt     DateTime? @map("refunded_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking      Booking?     @relation(fields: [bookingId], references: [id])
+  membership   Membership?  @relation(fields: [membershipId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+  @@index([bookingId])
+  @@map("payments")
+}
+
+model Notification {
+  id             String           @id @default(uuid())
+  organizationId String           @map("organization_id")
+  userId         String?          @map("user_id")
+  title          String           @db.VarChar(255)
+  message        String           @db.Text
+  type           NotificationType @default(IN_APP)
+
+  scheduledAt    DateTime @default(now()) @map("scheduled_at") @db.Timestamptz(6)
+  sentAt         DateTime? @map("sent_at") @db.Timestamptz(6)
+  deliveryStatus String   @default("pending") @map("delivery_status") @db.VarChar(20)
+
+  userRoles UserRole[] @map("user_roles")
+
+  bookingId    String? @map("booking_id")
+  membershipId String? @map("membership_id")
+
+  readAt   DateTime? @map("read_at") @db.Timestamptz(6)
+  metadata Json      @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking      Booking?     @relation(fields: [bookingId], references: [id])
+  membership   Membership?  @relation(fields: [membershipId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("notifications")
+}
+
+model Document {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  userId         String? @map("user_id")
+
+  filename         String @db.VarChar(255)
+  originalFilename String @map("original_filename") @db.VarChar(255)
+  filePath         String @map("file_path") @db.VarChar(500)
+  fileSize         Int    @map("file_size")
+  mimeType         String @map("mime_type") @db.VarChar(100)
+
+  documentType String  @map("document_type") @db.VarChar(50)
+  category     String? @db.VarChar(50)
+
+  isPublic  Boolean   @default(false) @map("is_public")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  bookingId    String? @map("booking_id")
+  membershipId String? @map("membership_id")
+
+  metadata  Json @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+  booking      Booking?     @relation(fields: [bookingId], references: [id])
+  membership   Membership?  @relation(fields: [membershipId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("documents")
+}
+
+model AuditLog {
+  id             String  @id @default(uuid())
+  organizationId String? @map("organization_id")
+  userId         String? @map("user_id")
+
+  action     String  @db.VarChar(100)
+  entityType String  @map("entity_type") @db.VarChar(50)
+  entityId   String? @map("entity_id")
+
+  ipAddress String? @map("ip_address") @db.VarChar(45)
+  userAgent String? @map("user_agent") @db.Text
+  requestId String? @map("request_id") @db.VarChar(100)
+
+  oldValues Json? @map("old_values")
+  newValues Json? @map("new_values")
+
+  timestamp DateTime @default(now()) @db.Timestamptz(6)
+  metadata  Json     @default("{}")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

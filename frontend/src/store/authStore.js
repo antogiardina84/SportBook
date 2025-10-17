@@ -1,43 +1,84 @@
+// ============================================
 // frontend/src/store/authStore.js
+// Zustand Store - Autenticazione Globale
+// ============================================
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authAPI } from '@api/auth';
+import { authAPI } from '../api/auth';
 
-export const useAuthStore = create(
+const useAuthStore = create(
   persist(
     (set, get) => ({
+      // State
       user: null,
+      token: null,
+      refreshToken: null,
       isAuthenticated: false,
-      isLoading: true,
+      loading: false,
+      error: null,
+
+      // Actions
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      
+      setTokens: (token, refreshToken) => set({ token, refreshToken }),
+      
+      setLoading: (loading) => set({ loading }),
+      
+      setError: (error) => set({ error }),
 
       // Login
-      login: async (credentials) => {
+      login: async (email, password) => {
+        set({ loading: true, error: null });
         try {
-          const response = await authAPI.login(credentials);
-          const { user, accessToken } = response.data;
+          const response = await authAPI.login({ email, password });
+          const { user, token, refreshToken } = response.data;
           
-          localStorage.setItem('accessToken', accessToken);
-          set({ user, isAuthenticated: true });
-          
-          return { success: true };
+          set({
+            user,
+            token,
+            refreshToken,
+            isAuthenticated: true,
+            loading: false,
+            error: null
+          });
+
+          // Store token in axios defaults
+          localStorage.setItem('auth_token', token);
+          localStorage.setItem('refresh_token', refreshToken);
+
+          return { success: true, user };
         } catch (error) {
-          return { success: false, error: error.response?.data?.message };
+          const errorMsg = error.response?.data?.message || 'Errore durante il login';
+          set({ loading: false, error: errorMsg });
+          return { success: false, error: errorMsg };
         }
       },
 
       // Register
       register: async (userData) => {
+        set({ loading: true, error: null });
         try {
           const response = await authAPI.register(userData);
-          const { user, accessToken } = response.data;
+          const { user, token, refreshToken } = response.data;
           
-          localStorage.setItem('accessToken', accessToken);
-          set({ user, isAuthenticated: true });
-          
-          return { success: true };
+          set({
+            user,
+            token,
+            refreshToken,
+            isAuthenticated: true,
+            loading: false,
+            error: null
+          });
+
+          localStorage.setItem('auth_token', token);
+          localStorage.setItem('refresh_token', refreshToken);
+
+          return { success: true, user };
         } catch (error) {
-          return { success: false, error: error.response?.data?.message };
+          const errorMsg = error.response?.data?.message || 'Errore durante la registrazione';
+          set({ loading: false, error: errorMsg });
+          return { success: false, error: errorMsg };
         }
       },
 
@@ -48,58 +89,127 @@ export const useAuthStore = create(
         } catch (error) {
           console.error('Logout error:', error);
         } finally {
-          localStorage.removeItem('accessToken');
-          set({ user: null, isAuthenticated: false });
-        }
-      },
-
-      // Load user profile
-      loadUser: async () => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-          set({ isLoading: false });
-          return;
-        }
-
-        try {
-          const response = await authAPI.getProfile();
-          set({
-            user: response.data.user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } catch (error) {
-          localStorage.removeItem('accessToken');
           set({
             user: null,
+            token: null,
+            refreshToken: null,
             isAuthenticated: false,
-            isLoading: false,
+            loading: false,
+            error: null
           });
+
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user_data');
         }
       },
 
       // Update profile
-      updateProfile: async (data) => {
+      updateProfile: async (profileData) => {
+        set({ loading: true, error: null });
         try {
-          const response = await authAPI.updateProfile(data);
-          set({ user: response.data.user });
-          return { success: true };
+          const response = await authAPI.updateProfile(profileData);
+          const updatedUser = response.data.user;
+          
+          set({
+            user: updatedUser,
+            loading: false,
+            error: null
+          });
+
+          return { success: true, user: updatedUser };
         } catch (error) {
-          return { success: false, error: error.response?.data?.message };
+          const errorMsg = error.response?.data?.message || 'Errore nell\'aggiornamento profilo';
+          set({ loading: false, error: errorMsg });
+          return { success: false, error: errorMsg };
         }
       },
+
+      // Change password
+      changePassword: async (currentPassword, newPassword) => {
+        set({ loading: true, error: null });
+        try {
+          await authAPI.changePassword({ currentPassword, newPassword });
+          set({ loading: false, error: null });
+          return { success: true };
+        } catch (error) {
+          const errorMsg = error.response?.data?.message || 'Errore nel cambio password';
+          set({ loading: false, error: errorMsg });
+          return { success: false, error: errorMsg };
+        }
+      },
+
+      // Refresh token
+      refreshAccessToken: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) return false;
+
+        try {
+          const response = await authAPI.refreshToken(refreshToken);
+          const { token: newToken, refreshToken: newRefreshToken } = response.data;
+          
+          set({
+            token: newToken,
+            refreshToken: newRefreshToken
+          });
+
+          localStorage.setItem('auth_token', newToken);
+          localStorage.setItem('refresh_token', newRefreshToken);
+
+          return true;
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+          get().logout();
+          return false;
+        }
+      },
+
+      // Verify token
+      verifyToken: async () => {
+        const { token } = get();
+        if (!token) return false;
+
+        try {
+          const response = await authAPI.getProfile();
+          set({ user: response.data.user, isAuthenticated: true });
+          return true;
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          get().logout();
+          return false;
+        }
+      },
+
+      // Check if user has role
+      hasRole: (roles) => {
+        const { user } = get();
+        if (!user || !user.role) return false;
+        
+        if (Array.isArray(roles)) {
+          return roles.includes(user.role);
+        }
+        return user.role === roles;
+      },
+
+      // Check if user is admin
+      isAdmin: () => {
+        const { user } = get();
+        return user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+      },
+
+      // Clear error
+      clearError: () => set({ error: null })
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
+        token: state.token,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated
+      })
     }
   )
 );
 
-// Initialize auth on app start
-if (typeof window !== 'undefined') {
-  useAuthStore.getState().loadUser();
-}
+export default useAuthStore;

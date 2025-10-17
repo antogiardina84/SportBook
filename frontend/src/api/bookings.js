@@ -5,6 +5,7 @@
 import api from './axios';
 
 export const bookingsAPI = {
+
   getAll: async (params) => {
     const response = await api.get('/bookings', { params });
     return response.data;
@@ -35,3 +36,7 @@ export const bookingsAPI = {
     return response.data;
   },
 };
+
+export const bookingAPI = bookingsAPI;
+export const bookingApi = bookingsAPI;
+export default bookingsAPI;

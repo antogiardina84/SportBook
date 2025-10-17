@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  base: '../',
   plugins: [react()],
   resolve: {
     alias: {
@@ -16,10 +17,12 @@ export default defineConfig({
       '@api': path.resolve(__dirname, './src/api'),
       '@store': path.resolve(__dirname, './src/store'),
       '@assets': path.resolve(__dirname, './src/assets'),
+      '@contexts': path.resolve(__dirname, './src/contexts'),
     },
   },
   server: {
     port: 3000,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

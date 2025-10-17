@@ -1,29 +1,23 @@
-// ===========================================
+// ============================================
 // frontend/src/hooks/useAuth.js
-// ===========================================
+// Hook per Gestione Autenticazione
+// ============================================
 
-import { useAuthStore } from '@store/authStore';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
+/**
+ * Hook personalizzato per accedere al contesto di autenticazione
+ * Fornisce accesso a user, login, logout, register e altri metodi auth
+ */
 export const useAuth = () => {
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-    login,
-    register,
-    logout,
-    updateProfile,
-  } = useAuthStore();
-
-  return {
-    user,
-    isAuthenticated,
-    isLoading,
-    login,
-    register,
-    logout,
-    updateProfile,
-    isAdmin: user?.role === 'ADMIN',
-    isManager: user?.role === 'MANAGER' || user?.role === 'ADMIN',
-  };
+  const context = useContext(AuthContext);
+  
+  if (!context) {
+    throw new Error('useAuth deve essere usato all\'interno di AuthProvider');
+  }
+  
+  return context;
 };
+
+export default useAuth;

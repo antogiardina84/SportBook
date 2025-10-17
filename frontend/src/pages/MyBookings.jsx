@@ -41,7 +41,7 @@ import {
 } from '@mui/icons-material';
 import { format, parseISO, isFuture, isPast } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { bookingAPI } from '../api/bookings';
+import { bookingsAPI as bookingAPI } from '../api/bookings';
 import { useAuth } from '../hooks/useAuth';
 
 const MyBookings = () => {

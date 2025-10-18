@@ -11,7 +11,7 @@ const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const { sendEmail } = require('../utils/email');
 const { generateTokens, verifyRefreshToken } = require('../utils/jwt');
-const Joi = require('joi'); // Necessario per la validazione GUID condizionale
+const Joi = require('joi'); 
 
 const router = express.Router();
 
@@ -45,8 +45,10 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone, organizationId: bodyOrgId } = req.body;
     
-    const urlOrgId = req.query.orgId;
+    // ADDED: Logic to read orgId from query params
+    const urlOrgId = req.query.orgId; 
 
+    // ADDED: Logic to determine final organizationId
     // LEGGE L'ID DI DEFAULT DALLE VARIABILI D'AMBIENTE
     const DEFAULT_ORGANIZATION_ID = process.env.DEFAULT_ORGANIZATION_ID; 
 
@@ -61,21 +63,9 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
        });
     }
 
-    // Validazione GUID solo se l'ID non è quello di default (che si assume corretto se configurato)
-    if (organizationIdToUse !== DEFAULT_ORGANIZATION_ID) {
-      const { error: guidError } = Joi.string().uuid().validate(organizationIdToUse);
-      if (guidError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors: [{ field: 'organizationId', message: '"organizationId" must be a valid GUID' }]
-        });
-      }
-    }
-
     // Ricerca e Validazione Organizzazione
     const organization = await prisma.organization.findUnique({
-      where: { id: organizationIdToUse },
+      where: { id: organizationIdToUse }, // UPDATED: usa organizationIdToUse
       select: { id: true, subscriptionStatus: true, name: true }
     });
 
@@ -97,7 +87,7 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
     const existingUser = await prisma.user.findFirst({
       where: {
         email: email.toLowerCase(),
-        organizationId: organizationIdToUse
+        organizationId: organizationIdToUse // UPDATED
       }
     });
 
@@ -118,8 +108,8 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
         lastName,
         email: email.toLowerCase(),
         passwordHash: hashedPassword,
-        phone,
-        organizationId: organizationIdToUse,
+        phone, // phone can be null/empty string, Prisma handles it
+        organizationId: organizationIdToUse, // UPDATED
         role: 'MEMBER'
       },
       include: {
@@ -602,7 +592,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 });
 
 // @route   GET /api/auth/me
-// @desc    Get current user profile (RISOLVE L'ERRORE 404)
+// @desc    Get current user profile
 // @access  Private
 router.get('/me', authenticateToken, async (req, res) => {
   try {

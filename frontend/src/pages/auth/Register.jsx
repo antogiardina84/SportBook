@@ -19,20 +19,21 @@ import {
   Lock as LockIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useAuth } from '@contexts/AuthContext';
 
 const Register = () => {
   const { register } = useAuth();
-  const [searchParams] = useSearchParams(); 
-  const orgIdFromUrl = searchParams.get('orgId'); 
+  const [searchParams] = useSearchParams(); // AGGIUNTO
+  const orgIdFromUrl = searchParams.get('orgId'); // AGGIUNTO
 
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    organizationId: orgIdFromUrl || '', 
+    organizationId: orgIdFromUrl || '', // MODIFICATO: Pre-riempito da URL o vuoto
     password: '',
     confirmPassword: '',
   });
@@ -41,17 +42,18 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [globalError, setGlobalError] = useState('');
+  const [globalError, setGlobalError] = useState(''); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'organizationId') return;
+    // Disabilita la modifica manuale di organizationId se è pre-riempito da URL
+    if (name === 'organizationId' && orgIdFromUrl) return;
 
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    // Rimuove l'errore specifico quando l'utente inizia a scrivere
+    // Pulisce l'errore specifico e globale quando l'utente inizia a digitare
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -68,7 +70,7 @@ const Register = () => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     const phoneRegex = /^[\d\s\-+()]+$/;
 
-    // Validazioni base (solo quelle necessarie, in coerenza con il backend)
+    // Validazioni base richieste
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Nome richiesto';
     }
@@ -83,11 +85,14 @@ const Register = () => {
       newErrors.email = 'Email non valida';
     }
     
+    // MODIFICATO: organizationId e phone NON sono più richiesti lato client.
+    
     // MODIFICATO: Controllo telefono solo se valorizzato (non più richiesto)
     if (formData.phone && !phoneRegex.test(formData.phone)) {
       newErrors.phone = 'Telefono non valido';
     }
-
+    
+    // Validazione Password
     if (!formData.password) {
       newErrors.password = 'Password richiesta';
     } else if (!passwordRegex.test(formData.password)) {
@@ -115,19 +120,19 @@ const Register = () => {
     try {
       const { confirmPassword, ...userData } = formData;
       
-      const result = await register(userData);
+      // La funzione 'register' ora riceve tutti i dati, incluso organizationId
+      const result = await register(userData); // Assumiamo che register gestisca gli errori del server
       
       if (!result.success) {
         // Gestione degli errori dal backend (errore 400)
-        let errorMessage = result.error;
+        let errorMessage = result.error || 'Errore di registrazione sconosciuto. Riprova.';
 
+        // Mappa gli errori di campo dal server (es. email già esistente, validazione Joi)
         if (result.fieldErrors && Array.isArray(result.fieldErrors)) {
-           // Mappa gli errori di campo e sovrascrivi gli errori locali
            const serverErrors = result.fieldErrors.reduce((acc, err) => {
-             // Il backend Joi usa 'firstName', ma 'field' potrebbe essere 'firstName'
              const fieldName = err.field.split('.').pop(); 
-             acc[fieldName] = err.message.replace(/"(firstName|lastName|email|password|phone|organizationId)"/, (match, p1) => {
-                 // Sostituisce il nome del campo in inglese con la sua traduzione se è Joi
+             // Traduzione e pulizia del messaggio di errore Joi
+             acc[fieldName] = err.message.replace(/"(firstName|lastName|email|password|phone|organizationId)"/g, (match, p1) => {
                  if (p1 === 'firstName') return 'Nome';
                  if (p1 === 'lastName') return 'Cognome';
                  if (p1 === 'email') return 'Email';
@@ -140,16 +145,14 @@ const Register = () => {
            }, {});
            setErrors(prev => ({ ...prev, ...serverErrors }));
            
-           // Se ci sono errori di campo, usa un messaggio generico o il messaggio principale
            errorMessage = result.error || 'La registrazione è fallita a causa di problemi di validazione.'; 
         }
 
-        // Imposta l'errore globale, sia che sia del server o un riepilogo
         setGlobalError(errorMessage);
       }
       
     } catch (error) {
-      // Catch per errori non gestiti da AuthContext (es. 500)
+      // Catch per errori non gestiti da AuthContext (es. 500 di rete)
       console.error('Errore durante la registrazione (catch):', error);
       setGlobalError('Errore di connessione o del server. Riprova più tardi.');
     } finally {
@@ -258,6 +261,27 @@ const Register = () => {
             />
           </Grid>
           
+          {/* CAMPO MODIFICATO: organizationId */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="ID Organizzazione (Opzionale)"
+              name="organizationId"
+              value={formData.organizationId}
+              onChange={handleChange}
+              error={Boolean(errors.organizationId)}
+              helperText={errors.organizationId}
+              disabled={loading || Boolean(orgIdFromUrl)} // Disabilita se pre-riempito da URL
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BusinessIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
           <Grid item xs={12}>
             <TextField
               fullWidth

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -10,6 +10,7 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Alert, 
 } from '@mui/material';
 import {
   Visibility,
@@ -23,37 +24,51 @@ import { useAuth } from '@contexts/AuthContext';
 
 const Register = () => {
   const { register } = useAuth();
+  const [searchParams] = useSearchParams(); 
+  const orgIdFromUrl = searchParams.get('orgId'); 
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
+    organizationId: orgIdFromUrl || '', 
     password: '',
     confirmPassword: '',
   });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [globalError, setGlobalError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'organizationId') return;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
+    // Rimuove l'errore specifico quando l'utente inizia a scrivere
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
       }));
     }
+    if (globalError) {
+        setGlobalError('');
+    }
   };
 
   const validate = () => {
     const newErrors = {};
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const phoneRegex = /^[\d\s\-+()]+$/;
 
+    // Validazioni base (solo quelle necessarie, in coerenza con il backend)
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Nome richiesto';
     }
@@ -67,17 +82,16 @@ const Register = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email non valida';
     }
-
-    if (!formData.phone) {
-      newErrors.phone = 'Telefono richiesto';
-    } else if (!/^[\d\s\-+()]+$/.test(formData.phone)) {
+    
+    // MODIFICATO: Controllo telefono solo se valorizzato (non più richiesto)
+    if (formData.phone && !phoneRegex.test(formData.phone)) {
       newErrors.phone = 'Telefono non valido';
     }
 
     if (!formData.password) {
       newErrors.password = 'Password richiesta';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password deve essere di almeno 8 caratteri';
+    } else if (!passwordRegex.test(formData.password)) {
+      newErrors.password = 'La password deve avere almeno 8 caratteri e includere maiuscole, minuscole, un numero e un carattere speciale.';
     }
 
     if (!formData.confirmPassword) {
@@ -95,10 +109,49 @@ const Register = () => {
 
     if (!validate()) return;
 
+    setGlobalError('');
     setLoading(true);
+    
     try {
       const { confirmPassword, ...userData } = formData;
-      await register(userData);
+      
+      const result = await register(userData);
+      
+      if (!result.success) {
+        // Gestione degli errori dal backend (errore 400)
+        let errorMessage = result.error;
+
+        if (result.fieldErrors && Array.isArray(result.fieldErrors)) {
+           // Mappa gli errori di campo e sovrascrivi gli errori locali
+           const serverErrors = result.fieldErrors.reduce((acc, err) => {
+             // Il backend Joi usa 'firstName', ma 'field' potrebbe essere 'firstName'
+             const fieldName = err.field.split('.').pop(); 
+             acc[fieldName] = err.message.replace(/"(firstName|lastName|email|password|phone|organizationId)"/, (match, p1) => {
+                 // Sostituisce il nome del campo in inglese con la sua traduzione se è Joi
+                 if (p1 === 'firstName') return 'Nome';
+                 if (p1 === 'lastName') return 'Cognome';
+                 if (p1 === 'email') return 'Email';
+                 if (p1 === 'password') return 'Password';
+                 if (p1 === 'phone') return 'Telefono';
+                 if (p1 === 'organizationId') return 'ID Organizzazione';
+                 return match;
+             });
+             return acc;
+           }, {});
+           setErrors(prev => ({ ...prev, ...serverErrors }));
+           
+           // Se ci sono errori di campo, usa un messaggio generico o il messaggio principale
+           errorMessage = result.error || 'La registrazione è fallita a causa di problemi di validazione.'; 
+        }
+
+        // Imposta l'errore globale, sia che sia del server o un riepilogo
+        setGlobalError(errorMessage);
+      }
+      
+    } catch (error) {
+      // Catch per errori non gestiti da AuthContext (es. 500)
+      console.error('Errore durante la registrazione (catch):', error);
+      setGlobalError('Errore di connessione o del server. Riprova più tardi.');
     } finally {
       setLoading(false);
     }
@@ -114,6 +167,13 @@ const Register = () => {
       >
         Registrati
       </Typography>
+      
+      {/* Mostra eventuali errori globali */}
+      {globalError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+              {globalError}
+          </Alert>
+      )}
 
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
@@ -181,7 +241,7 @@ const Register = () => {
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Telefono"
+              label="Telefono (Opzionale)"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
@@ -197,7 +257,7 @@ const Register = () => {
               }}
             />
           </Grid>
-
+          
           <Grid item xs={12}>
             <TextField
               fullWidth

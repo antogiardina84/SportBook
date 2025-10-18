@@ -4,7 +4,6 @@ import api from '@api/axios';
 import { toast } from 'react-toastify';
 
 
-
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -27,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await api.get('/auth/me');
+      const response = await api.get('/auth/me'); 
       setUser(response.data.data.user);
       setIsAuthenticated(true);
     } catch (error) {
@@ -44,20 +43,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { user, accessToken, refreshToken } = response.data.data;
+      const { user, accessToken } = response.data.data;
 
       localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
+      // Il refreshToken è impostato come cookie HTTP-only
+
       setUser(user);
       setIsAuthenticated(true);
-      
       toast.success(`Benvenuto, ${user.firstName}!`);
-      navigate('/dashboard');
       
+      // Re-initialize API headers with new token (if you have an interceptor)
+      // api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Errore durante il login';
+      const message = error.response?.data?.message || 'Credenziali non valide';
       toast.error(message);
       return { success: false, error: message };
     }
@@ -65,21 +65,27 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
+      // Invia i dati di registrazione, includendo organizationId (vuoto o da URL)
       const response = await api.post('/auth/register', userData);
-      const { user, accessToken, refreshToken } = response.data.data;
+      const { user, accessToken } = response.data.data;
 
       localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
       
       setUser(user);
       setIsAuthenticated(true);
-      
       toast.success('Registrazione completata con successo!');
-      navigate('/dashboard');
       
       return { success: true };
     } catch (error) {
+      // MODIFICATO: Aggiunta gestione degli errori di validazione
       const message = error.response?.data?.message || 'Errore durante la registrazione';
+      
+      if (error.response?.data?.errors) {
+         // Ritorna gli errori di campo specifici
+         return { success: false, error: message, fieldErrors: error.response.data.errors };
+      }
+      
+      // Ritorna errore globale se non ci sono errori di campo
       toast.error(message);
       return { success: false, error: message };
     }
@@ -107,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Profilo aggiornato con successo');
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Errore durante l\'aggiornamento';
+      const message = error.response?.data?.message || "Errore durante l'aggiornamento";
       toast.error(message);
       return { success: false, error: message };
     }
@@ -128,11 +134,5 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };
-
-export default AuthContext;

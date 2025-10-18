@@ -1,44 +1,44 @@
 // ============================================
 // frontend/src/App.jsx
-// VERSIONE CORRETTA con percorsi esistenti
+// VERSIONE FINALE CORRETTA - Router prima di AuthProvider
 // ============================================
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 
-// Layout Components - PERCORSI CORRETTI
-import Header from './components/layouts/Header';  // ✅ Corretto
-// import Footer from './components/common/Footer';  // ❌ Commentato - non esiste
+// Context Provider
+import { AuthProvider } from './contexts/AuthContext';
+
+// Layout Components
+import Header from './components/layouts/Header';
+import Footer from './components/common/Footer';
 
 // Common Components
 import ErrorBoundary from './components/common/ErrorBoundary';
 
-// Auth Components - PERCORSO CORRETTO
-import ProtectedRoute from './pages/auth/ProtectedRoute';  // ✅ Corretto
+// Auth Components
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
-// Pages - PERCORSI CORRETTI
-import Login from './pages/auth/Login';              // ✅ Corretto
-import Register from './pages/auth/Register';        // ✅ Corretto
-import Dashboard from './pages/Dashboard';           // ✅ Corretto
-import MyBookings from './pages/MyBookings';         // ✅ Corretto
-import Profile from './pages/Profile';               // ✅ Corretto (se esiste)
-import NotFound from './pages/NotFound';             // ✅ Corretto (se esiste)
+// Pages
+import Home from './pages/Home';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Dashboard from './pages/Dashboard';
+import MyBookings from './pages/MyBookings';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 
 // Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';  // ✅ Corretto
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Bookings Pages
-import BookingList from './pages/bookings/BookingList';      // ✅ Corretto
-import BookingCreate from './pages/bookings/BookingCreate';  // ✅ Corretto
-import BookingDetail from './pages/bookings/BookingDetail';  // ✅ Corretto
+import BookingCreate from './pages/bookings/BookingCreate';
+import BookingDetail from './pages/bookings/BookingDetail';
 
 // Fields Pages
-import FieldList from './pages/fields/FieldList';      // ✅ Corretto
-import FieldDetail from './pages/fields/FieldDetail';  // ✅ Corretto
-
-// Hooks
-// import { useAuth } from './hooks/useAuth';  // Commentato temporaneamente
+import FieldList from './pages/fields/FieldList';
+import FieldDetail from './pages/fields/FieldDetail';
 
 // Theme Configuration
 const theme = createTheme({
@@ -127,145 +127,106 @@ const theme = createTheme({
   },
 });
 
-// Componente Home temporaneo (dato che non esiste)
-const Home = () => (
-  <div style={{ padding: '40px', textAlign: 'center' }}>
-    <h1>🎾 SportBook</h1>
-    <h2>Sistema di Gestione Campi Sportivi</h2>
-    <p>Benvenuto! Effettua il login per accedere.</p>
-    <div style={{ marginTop: '20px' }}>
-      <a href="/login" style={{ marginRight: '20px' }}>Login</a>
-      <a href="/register">Registrati</a>
-    </div>
-  </div>
-);
-
 // Main App Component
 function App() {
-  // Temporaneamente disabilitato useAuth per evitare errori
-  // const { isAuthenticated, loading } = useAuth();
-  const isAuthenticated = false;
-  const loading = false;
-
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh'
-        }}>
-          Loading...
-        </div>
-      </ThemeProvider>
-    );
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <ErrorBoundary>
-        <Router>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <Header />
-            
-            <main style={{ flex: 1, padding: '20px' }}>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route
-                  path="/login"
-                  element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
-                />
-                <Route
-                  path="/register"
-                  element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />}
-                />
+        <Router> {/* ✅ Router PRIMA */}
+          <AuthProvider> {/* ✅ AuthProvider DOPO - può usare useNavigate */}
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+              <Header />
+              
+              <main style={{ flex: 1 }}>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
 
-                {/* Protected User Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/bookings"
-                  element={
-                    <ProtectedRoute>
-                      <MyBookings />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/bookings/new"
-                  element={
-                    <ProtectedRoute>
-                      <BookingCreate />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/bookings/:id"
-                  element={
-                    <ProtectedRoute>
-                      <BookingDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/fields"
-                  element={
-                    <ProtectedRoute>
-                      <FieldList />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/fields/:id"
-                  element={
-                    <ProtectedRoute>
-                      <FieldDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Protected User Routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/bookings"
+                    element={
+                      <ProtectedRoute>
+                        <MyBookings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/bookings/new"
+                    element={
+                      <ProtectedRoute>
+                        <BookingCreate />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/bookings/:id"
+                    element={
+                      <ProtectedRoute>
+                        <BookingDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/fields"
+                    element={
+                      <ProtectedRoute>
+                        <FieldList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/fields/:id"
+                    element={
+                      <ProtectedRoute>
+                        <FieldDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Protected Admin Routes */}
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute requiredRole={['ADMIN', 'SUPER_ADMIN']}>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Protected Admin Routes */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute requiredRole={['ADMIN', 'SUPER_ADMIN']}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* 404 Not Found */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            
-            {/* Footer commentato perché non esiste */}
-            {/* <Footer /> */}
-          </div>
+                  {/* 404 Not Found */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              
+              <Footer />
+            </div>
+          </AuthProvider>
         </Router>
       </ErrorBoundary>
     </ThemeProvider>

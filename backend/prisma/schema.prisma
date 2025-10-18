@@ -152,6 +152,7 @@ model Field {
   organizationId String    @map("organization_id")
   name           String    @db.VarChar(100)
   description    String?   @db.Text
+  location       String?   @db.Text
   fieldType      FieldType @map("field_type")
 
   hourlyRate            Decimal @default(0) @map("hourly_rate") @db.Decimal(10, 2)

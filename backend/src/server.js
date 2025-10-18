@@ -90,10 +90,15 @@ app.use(session({
   name: 'sportbook.sid'
 }));
 
-// Rate limiting
+// ============================================
+// 🔧 RATE LIMITING - FIXED FOR DEVELOPMENT
+// ============================================
+
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: isDevelopment ? 1000 : 100, // 🔧 1000 in dev, 100 in prod
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '15 minutes'
@@ -101,26 +106,40 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for webhooks
-    return req.originalUrl && req.originalUrl.includes('/webhook');
+    // Skip rate limiting for webhooks and health checks
+    return req.originalUrl && (
+      req.originalUrl.includes('/webhook') || 
+      req.originalUrl.includes('/health')
+    );
   }
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: isDevelopment ? 100 : 10, // 🔧 100 in dev, 10 in prod
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: '15 minutes'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // 🔧 Don't count successful requests
 });
 
 app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
 
-// Request logging
+// Log rate limit configuration in development
+if (isDevelopment) {
+  logger.info('⚠️  Development Mode: Rate limiting relaxed');
+  logger.info('   - General API: 1000 requests/15min');
+  logger.info('   - Auth API: 100 requests/15min\n');
+}
+
+// ============================================
+// REQUEST LOGGING
+// ============================================
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
@@ -135,7 +154,10 @@ setupSecurity(app);
 // Serve static files (uploads)
 app.use('/uploads', express.static('uploads'));
 
-// Health check endpoint
+// ============================================
+// HEALTH CHECK ENDPOINT
+// ============================================
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -146,7 +168,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
+// ============================================
+// API ROUTES
+// ============================================
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/organizations', require('./routes/organizations'));
 app.use('/api/users', require('./routes/users'));
@@ -162,13 +187,20 @@ app.use('/api/reports', require('./routes/reports'));
 // Webhook endpoints (before error handling)
 app.use('/api/webhooks', require('./routes/webhooks'));
 
+// ============================================
+// ERROR HANDLING
+// ============================================
+
 // 404 handler
 app.use(notFound);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Graceful shutdown handling
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
+
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
@@ -209,7 +241,10 @@ function gracefulShutdown(signal) {
   }, 30000);
 }
 
-// Start server
+// ============================================
+// START SERVER
+// ============================================
+
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
@@ -240,6 +275,7 @@ async function startServer() {
         logger.info('   - POST   /api/auth/login');
         logger.info('   - GET    /api/auth/me');
         logger.info('   - GET    /api/bookings');
+        logger.info('   - GET    /api/bookings/my-bookings');
         logger.info('   - POST   /api/bookings');
         logger.info('   - GET    /api/fields');
         logger.info('   - POST   /api/payments/create-payment-intent');
@@ -261,6 +297,10 @@ async function startServer() {
 
 // Start the server
 startServer();
+
+// ============================================
+// UNHANDLED ERRORS
+// ============================================
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {

@@ -91,6 +91,9 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
+  "prisma": {
+  "seed": "node prisma/seed.js"
+  },
   "lint-staged": {
     "*.js": [
       "eslint --fix",

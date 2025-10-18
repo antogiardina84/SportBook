@@ -1,5 +1,6 @@
 // ===========================================
 // frontend/src/api/auth.js
+// API Client per Autenticazione - CORRETTO
 // ===========================================
 
 import api from './axios';
@@ -44,4 +45,11 @@ export const authAPI = {
     const response = await api.post('/auth/reset-password', data);
     return response.data;
   },
+
+  refreshToken: async (refreshToken) => {
+    const response = await api.post('/auth/refresh', { refreshToken });
+    return response.data;
+  },
 };
+
+export default authAPI;

@@ -1,56 +1,56 @@
 // ============================================
 // frontend/src/api/fields.js
-// API Client per Gestione Campi - COMPLETO
+// API Client per Gestione Campi - CORRETTO
 // ============================================
 
 import axios from './axios';
 
 export const fieldsAPI = {
   // Get all fields
-  getFields: (params) => axios.get('/api/fields', { params }),
+  getFields: (params) => axios.get('/fields', { params }),
   
   // Get single field
-  getField: (id) => axios.get(`/api/fields/${id}`),
+  getField: (id) => axios.get(`/fields/${id}`),
   
   // Check field availability
   checkAvailability: (fieldId, params) => 
-    axios.get(`/api/fields/${fieldId}/availability`, { params }),
+    axios.get(`/fields/${fieldId}/availability`, { params }),
   
   // Get field schedule
   getSchedule: (fieldId, date) => 
-    axios.get(`/api/fields/${fieldId}/schedule`, { params: { date } }),
+    axios.get(`/fields/${fieldId}/schedule`, { params: { date } }),
   
   // Get available time slots
   getAvailableSlots: (fieldId, date) => 
-    axios.get(`/api/fields/${fieldId}/available-slots`, { params: { date } }),
+    axios.get(`/fields/${fieldId}/available-slots`, { params: { date } }),
   
   // Search fields
-  searchFields: (params) => axios.get('/api/fields/search', { params }),
+  searchFields: (params) => axios.get('/fields/search', { params }),
   
   // Get field types
-  getFieldTypes: () => axios.get('/api/fields/types'),
+  getFieldTypes: () => axios.get('/fields/types'),
   
   // Get field by type
-  getFieldsByType: (type) => axios.get(`/api/fields/type/${type}`),
+  getFieldsByType: (type) => axios.get(`/fields/type/${type}`),
   
   // Admin: Create field
-  createField: (data) => axios.post('/api/fields', data),
+  createField: (data) => axios.post('/fields', data),
   
   // Admin: Update field
-  updateField: (id, data) => axios.put(`/api/fields/${id}`, data),
+  updateField: (id, data) => axios.put(`/fields/${id}`, data),
   
   // Admin: Delete field
-  deleteField: (id) => axios.delete(`/api/fields/${id}`),
+  deleteField: (id) => axios.delete(`/fields/${id}`),
   
   // Admin: Update field status
   updateFieldStatus: (id, isActive) => 
-    axios.patch(`/api/fields/${id}/status`, { isActive }),
+    axios.patch(`/fields/${id}/status`, { isActive }),
   
   // Get field statistics
-  getFieldStats: (id) => axios.get(`/api/fields/${id}/stats`),
+  getFieldStats: (id) => axios.get(`/fields/${id}/stats`),
   
   // Get popular fields
-  getPopularFields: () => axios.get('/api/fields/popular')
+  getPopularFields: () => axios.get('/fields/popular')
 };
 
 // Alias exports per compatibilità

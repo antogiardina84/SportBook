@@ -1,5 +1,6 @@
 // ===========================================
 // frontend/src/api/axios.js
+// CORRETTO - Senza /api doppio
 // ===========================================
 
 import axios from 'axios';
@@ -41,9 +42,11 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh token
+        const refreshToken = localStorage.getItem('refreshToken');
+        
         const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/auth/refresh`,
-          {},
+          'http://localhost:5000/api/auth/refresh', // ✅ URL completo
+          { refreshToken },
           { withCredentials: true }
         );
 
@@ -56,14 +59,17 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, redirect to login
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
 
-    // Show error toast
-    const message = error.response?.data?.message || 'Si è verificato un errore';
-    toast.error(message);
+    // Show error toast for non-401 errors
+    if (error.response?.status !== 401) {
+      const message = error.response?.data?.message || 'Si è verificato un errore';
+      toast.error(message);
+    }
 
     return Promise.reject(error);
   }

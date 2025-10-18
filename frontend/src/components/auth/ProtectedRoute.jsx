@@ -1,29 +1,33 @@
 // ============================================
 // frontend/src/components/auth/ProtectedRoute.jsx
-// Componente per Protezione Route con Role-Based Access
+// Protected Route con Token Check
 // ============================================
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
+import { Box, CircularProgress } from '@mui/material';
 
-const ProtectedRoute = ({ 
-  children, 
-  requiredRole = null,
-  redirectTo = '/login'
-}) => {
-  const { user, isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, requiredRole = null }) => {
+  const { user, isAuthenticated, isLoading, checkAuth } = useAuth();
   const location = useLocation();
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Re-check auth when component mounts
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token && !isAuthenticated && !isLoading) {
+      checkAuth();
+    }
+  }, []);
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
     return (
       <Box
         display="flex"
         justifyContent="center"
         alignItems="center"
-        minHeight="100vh"
+        minHeight="60vh"
       >
         <CircularProgress />
       </Box>
@@ -31,22 +35,21 @@ const ProtectedRoute = ({
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
-    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check role-based access
+  // Check role if required
   if (requiredRole) {
-    const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     
-    if (!roles.includes(user.role)) {
-      // Redirect to dashboard if user doesn't have required role
+    if (!allowedRoles.includes(user?.role)) {
       return <Navigate to="/dashboard" replace />;
     }
   }
 
-  // User is authenticated and has required role
-  return children;
+  // Render children if authenticated and authorized
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -1,258 +1,246 @@
 // ============================================
 // frontend/src/components/layouts/Header.jsx
-// Header Principale Applicazione
+// Header con Sidebar Mobile
 // ============================================
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
   Typography,
+  Button,
   IconButton,
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemButton,
   Avatar,
   Menu,
   MenuItem,
-  Box,
-  Badge,
-  Tooltip,
-  Divider
+  Divider,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  AccountCircle as AccountIcon,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon,
-  Dashboard as DashboardIcon
+  SportsTennis,
+  Dashboard as DashboardIcon,
+  EventNote,
+  Person,
+  ExitToApp,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 
-const Header = ({ onMenuClick }) => {
+const Header = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
   
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifAnchor, setNotifAnchor] = useState(null);
 
-  const handleMenu = (event) => {
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleProfileMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const handleNotifications = (event) => {
-    setNotifAnchor(event.currentTarget);
+  const handleLogout = async () => {
+    handleProfileMenuClose();
+    await logout();
   };
 
-  const handleNotifClose = () => {
-    setNotifAnchor(null);
+  const handleNavigation = (path) => {
+    navigate(path);
+    setMobileOpen(false);
   };
 
-  const handleLogout = () => {
-    handleClose();
-    logout();
-    navigate('/login');
-  };
+  // Menu items per utenti autenticati
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Le Mie Prenotazioni', icon: <EventNote />, path: '/bookings' },
+    { text: 'Campi', icon: <SportsTennis />, path: '/fields' },
+    { text: 'Profilo', icon: <Person />, path: '/profile' },
+  ];
 
-  const handleProfile = () => {
-    handleClose();
-    navigate('/profile');
-  };
+  // Aggiungi menu admin se l'utente è admin
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+    menuItems.push({
+      text: 'Admin Panel',
+      icon: <AdminPanelSettings />,
+      path: '/admin',
+    });
+  }
 
-  const handleDashboard = () => {
-    handleClose();
-    if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/dashboard');
-    }
-  };
-
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  // Sidebar mobile
+  const drawer = (
+    <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <SportsTennis sx={{ fontSize: 40, color: '#667eea' }} />
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 1 }}>
+          SportBook
+        </Typography>
+      </Box>
+      <Divider />
+      <List>
+        {isAuthenticated ? (
+          <>
+            {menuItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  selected={location.pathname === item.path}
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+            <Divider sx={{ my: 1 }} />
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout}>
+                <ListItemIcon>
+                  <ExitToApp />
+                </ListItemIcon>
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        ) : (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/login')}>
+                <ListItemText primary="Accedi" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/register')}>
+                <ListItemText primary="Registrati" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
+      </List>
+    </Box>
+  );
 
   return (
-    <AppBar 
-      position="sticky" 
-      elevation={1}
-      sx={{
-        bgcolor: 'white',
-        color: 'text.primary',
-        borderBottom: '1px solid',
-        borderColor: 'divider'
-      }}
-    >
-      <Toolbar>
-        {/* Menu Button */}
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={onMenuClick}
-          sx={{ mr: 2 }}
-        >
-          <MenuIcon />
-        </IconButton>
-
-        {/* Logo & Title */}
-        <Box 
-          display="flex" 
-          alignItems="center" 
-          flexGrow={1}
-          sx={{ cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
-          <Typography
-            variant="h6"
-            component="div"
-            fontWeight="bold"
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
-          >
-            🎾 SportBook
-          </Typography>
-        </Box>
-
-        {/* Notifications */}
-        <Tooltip title="Notifiche">
-          <IconButton
-            color="inherit"
-            onClick={handleNotifications}
-            sx={{ mr: 1 }}
-          >
-            <Badge badgeContent={3} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-
-        {/* User Menu */}
-        <Tooltip title="Account">
-          <IconButton
-            onClick={handleMenu}
-            color="inherit"
-          >
-            <Avatar
-              alt={user?.firstName}
-              src={user?.avatarUrl}
-              sx={{ 
-                width: 32, 
-                height: 32,
-                bgcolor: 'primary.main'
-              }}
+    <>
+      <AppBar position="static" sx={{ bgcolor: '#667eea' }}>
+        <Toolbar>
+          {/* Menu hamburger per mobile */}
+          {isAuthenticated && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { md: 'none' } }}
             >
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </Avatar>
-          </IconButton>
-        </Tooltip>
-
-        {/* User Dropdown Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{
-            sx: { width: 250, mt: 1 }
-          }}
-        >
-          <Box px={2} py={1.5}>
-            <Typography variant="subtitle2" fontWeight="bold">
-              {user?.firstName} {user?.lastName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-          
-          <Divider />
-          
-          <MenuItem onClick={handleDashboard}>
-            <DashboardIcon fontSize="small" sx={{ mr: 1 }} />
-            Dashboard
-          </MenuItem>
-          
-          <MenuItem onClick={handleProfile}>
-            <AccountIcon fontSize="small" sx={{ mr: 1 }} />
-            Il Mio Profilo
-          </MenuItem>
-          
-          {isAdmin && (
-            <MenuItem onClick={() => { handleClose(); navigate('/admin/settings'); }}>
-              <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
-              Impostazioni
-            </MenuItem>
+              <MenuIcon />
+            </IconButton>
           )}
-          
-          <Divider />
-          
-          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-            <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
-            Logout
-          </MenuItem>
-        </Menu>
 
-        {/* Notifications Menu */}
-        <Menu
-          anchorEl={notifAnchor}
-          open={Boolean(notifAnchor)}
-          onClose={handleNotifClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{
-            sx: { width: 320, mt: 1 }
-          }}
-        >
-          <Box px={2} py={1.5}>
-            <Typography variant="subtitle2" fontWeight="bold">
-              Notifiche
+          {/* Logo */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexGrow: 1,
+              cursor: 'pointer',
+            }}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
+          >
+            <SportsTennis sx={{ mr: 1 }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              SportBook
             </Typography>
           </Box>
-          
-          <Divider />
-          
-          <MenuItem>
-            <Box>
-              <Typography variant="body2" fontWeight="bold">
-                Prenotazione confermata
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                La tua prenotazione per il 15/10/2025 è confermata
-              </Typography>
+
+          {/* Menu desktop */}
+          {isAuthenticated ? (
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+              <Button color="inherit" onClick={() => navigate('/dashboard')}>
+                Dashboard
+              </Button>
+              <Button color="inherit" onClick={() => navigate('/bookings')}>
+                Prenotazioni
+              </Button>
+              <Button color="inherit" onClick={() => navigate('/fields')}>
+                Campi
+              </Button>
+              {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                <Button color="inherit" onClick={() => navigate('/admin')}>
+                  Admin
+                </Button>
+              )}
+              
+              {/* Avatar con menu dropdown */}
+              <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 2 }}>
+                <Avatar sx={{ bgcolor: '#764ba2', width: 32, height: 32 }}>
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </Avatar>
+              </IconButton>
+              
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleProfileMenuClose}
+              >
+                <MenuItem onClick={() => { handleProfileMenuClose(); navigate('/profile'); }}>
+                  <Person sx={{ mr: 1 }} /> Profilo
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout}>
+                  <ExitToApp sx={{ mr: 1 }} /> Logout
+                </MenuItem>
+              </Menu>
             </Box>
-          </MenuItem>
-          
-          <MenuItem>
-            <Box>
-              <Typography variant="body2" fontWeight="bold">
-                Pagamento completato
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Pagamento di €25.00 completato con successo
-              </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button color="inherit" onClick={() => navigate('/login')}>
+                Accedi
+              </Button>
+              <Button
+                variant="outlined"
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
+                }}
+                onClick={() => navigate('/register')}
+              >
+                Registrati
+              </Button>
             </Box>
-          </MenuItem>
-          
-          <Divider />
-          
-          <MenuItem 
-            onClick={handleNotifClose}
-            sx={{ justifyContent: 'center', color: 'primary.main' }}
-          >
-            <Typography variant="body2" fontWeight="bold">
-              Vedi tutte le notifiche
-            </Typography>
-          </MenuItem>
-        </Menu>
-      </Toolbar>
-    </AppBar>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar mobile drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better mobile performance
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
+        }}
+      >
+        {drawer}
+      </Drawer>
+    </>
   );
 };
 

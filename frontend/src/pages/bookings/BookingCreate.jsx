@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tantml:react-query';
+import { useMutation, useQuery } from '@tanstack/react-query'; 
 import {
   Box,
   Card,

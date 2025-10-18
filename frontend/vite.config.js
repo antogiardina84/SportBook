@@ -1,12 +1,14 @@
-// frontend/vite.config.js
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  base: '../',
   plugins: [react()],
+  base: '/', // ✅ IMPORTANTE: Deve essere '/' o ''
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -23,15 +25,25 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    strictPort: false,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        secure: false,
       },
     },
   },
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+        },
+      },
+    },
   },
 });

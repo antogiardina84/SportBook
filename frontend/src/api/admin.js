@@ -1,6 +1,6 @@
 // ============================================
 // frontend/src/api/admin.js
-// API Client per operazioni Admin
+// API Client per operazioni Admin - COMPLETO
 // ============================================
 
 import axios from './axios';
@@ -8,6 +8,7 @@ import axios from './axios';
 export const adminAPI = {
   // Dashboard Statistics
   getDashboardStats: () => axios.get('/api/admin/dashboard'),
+  getDashboard: () => axios.get('/api/admin/dashboard'), // Alias
 
   // Organization Settings
   getSettings: () => axios.get('/api/admin/settings'),
@@ -61,5 +62,8 @@ export const adminAPI = {
   // Analytics
   getAnalytics: (params) => axios.get('/api/admin/analytics', { params })
 };
+
+// Alias exports per compatibilità
+export const adminApi = adminAPI;
 
 export default adminAPI;

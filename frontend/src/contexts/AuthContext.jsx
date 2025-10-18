@@ -64,20 +64,39 @@ export const AuthProvider = ({ children }) => {
   };
 
 const register = async (userData) => {
-    try {
-      const response = await api.post('/auth/register', userData);
-      // ... (success logic)
-    } catch (error) {
-      // Estrae la lista di errori (anche se il codice è 500)
-      const fieldErrors = error.response?.data?.errors; 
-      // Estrae il messaggio specifico (es. 'Missing default organization ID configuration.')
-      const message = error.response?.data?.message || 'Errore durante la registrazione';
-      
-      toast.error(message);
-      
-      // Passa sia l'errore globale che gli errori di campo
-      return { success: false, error: message, fieldErrors }; 
-    }
+  try {
+    const response = await api.post('/auth/register', userData);
+    
+    // AGGIUNGI QUESTA PARTE per gestire il successo
+    const { user, accessToken } = response.data.data;
+    
+    // Salva il token
+    localStorage.setItem('accessToken', accessToken);
+    
+    // Aggiorna lo stato
+    setUser(user);
+    setIsAuthenticated(true);
+    
+    // Mostra messaggio di successo
+    toast.success('Registrazione completata con successo!');
+    
+    // Naviga alla dashboard o alla home
+    navigate('/dashboard');
+    
+    // IMPORTANTE: Restituisci success = true
+    return { success: true };
+    
+  } catch (error) {
+    // Estrae la lista di errori (anche se il codice è 500)
+    const fieldErrors = error.response?.data?.errors; 
+    // Estrae il messaggio specifico
+    const message = error.response?.data?.message || 'Errore durante la registrazione';
+    
+    toast.error(message);
+    
+    // Passa sia l'errore globale che gli errori di campo
+    return { success: false, error: message, fieldErrors }; 
+  }
 };
 
   const logout = async () => {

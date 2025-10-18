@@ -11,6 +11,7 @@ const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const { sendEmail } = require('../utils/email');
 const { generateTokens, verifyRefreshToken } = require('../utils/jwt');
+const Joi = require('joi'); // Necessario per la validazione GUID condizionale
 
 const router = express.Router();
 
@@ -38,21 +39,50 @@ const passwordResetLimiter = rateLimit({
 });
 
 // @route   POST /api/auth/register
-// @desc    Register new user
+// @desc    Register new user (Iscrizione Libera con fallback a DEFAULT_ORGANIZATION_ID)
 // @access  Public
 router.post('/register', validate(schemas.registerUser), async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, organizationId } = req.body;
+    const { firstName, lastName, email, password, phone, organizationId: bodyOrgId } = req.body;
+    
+    const urlOrgId = req.query.orgId;
 
+    // LEGGE L'ID DI DEFAULT DALLE VARIABILI D'AMBIENTE
+    const DEFAULT_ORGANIZATION_ID = process.env.DEFAULT_ORGANIZATION_ID; 
+
+    // Logica di ASSOCIAZIONE: URL > Body > Default (Iscrizione Libera)
+    let organizationIdToUse = urlOrgId || bodyOrgId || DEFAULT_ORGANIZATION_ID;
+
+    if (!organizationIdToUse) {
+       return res.status(500).json({
+         success: false,
+         message: 'Registration is temporarily unavailable. Missing default organization ID configuration.',
+         errors: [{ field: 'organizationId', message: 'Missing system default organization ID configuration.' }]
+       });
+    }
+
+    // Validazione GUID solo se l'ID non è quello di default (che si assume corretto se configurato)
+    if (organizationIdToUse !== DEFAULT_ORGANIZATION_ID) {
+      const { error: guidError } = Joi.string().uuid().validate(organizationIdToUse);
+      if (guidError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: [{ field: 'organizationId', message: '"organizationId" must be a valid GUID' }]
+        });
+      }
+    }
+
+    // Ricerca e Validazione Organizzazione
     const organization = await prisma.organization.findUnique({
-      where: { id: organizationId },
+      where: { id: organizationIdToUse },
       select: { id: true, subscriptionStatus: true, name: true }
     });
 
     if (!organization) {
       return res.status(400).json({
         success: false,
-        message: 'Organization not found'
+        message: 'Organization not found. The registration link may be invalid or the default ID is incorrect.'
       });
     }
 
@@ -63,10 +93,11 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
       });
     }
 
+    // Controllo utente esistente (nello stesso tenant)
     const existingUser = await prisma.user.findFirst({
       where: {
         email: email.toLowerCase(),
-        organizationId
+        organizationId: organizationIdToUse
       }
     });
 
@@ -77,6 +108,7 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
       });
     }
 
+    // Creazione utente
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -87,7 +119,7 @@ router.post('/register', validate(schemas.registerUser), async (req, res) => {
         email: email.toLowerCase(),
         passwordHash: hashedPassword,
         phone,
-        organizationId,
+        organizationId: organizationIdToUse,
         role: 'MEMBER'
       },
       include: {
@@ -570,7 +602,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 });
 
 // @route   GET /api/auth/me
-// @desc    Get current user profile
+// @desc    Get current user profile (RISOLVE L'ERRORE 404)
 // @access  Private
 router.get('/me', authenticateToken, async (req, res) => {
   try {

@@ -44,8 +44,9 @@ const schemas = {
       .messages({
         'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'
       }),
-    phone: Joi.string().pattern(/^\+?[1-9]\d{6,14}$/).optional(),
-    organizationId: Joi.string().uuid().required()
+    // MODIFICATO: reso .optional() per l'iscrizione libera
+    phone: Joi.string().pattern(/^\+?[1-9]\d{6,14}$/).optional(), 
+    organizationId: Joi.string().uuid().optional() 
   }),
 
   // User login
